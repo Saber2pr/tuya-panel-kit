@@ -93,7 +93,8 @@ export default class NavigatorLayout extends Component {
     TYNativeModules.receiverMqttData(23);
     TYNativeModules.sendMqttData(22);
     TYSdk.DeviceEventEmitter.addListener('receiveMqttData', this._handleMqttSignal);
-    this.state.isMqttNoticeActive &&
+    this.cancelChangeListener =
+      this.state.isMqttNoticeActive &&
       AppState.addEventListener('change', this._handleAppStateChange);
   }
 
@@ -109,7 +110,11 @@ export default class NavigatorLayout extends Component {
 
     this.timer && clearTimeout(this.timer);
     TYSdk.DeviceEventEmitter.removeListener('receiveMqttData', this._handleMqttSignal);
-    AppState.removeEventListener('change', this._handleAppStateChange);
+    if (Platform.OS === 'harmony' && this.cancelChangeListener) {
+      typeof this.cancelChangeListener.remove === 'function' && this.cancelChangeListener.remove();
+    } else {
+      AppState.removeEventListener('change', this._handleAppStateChange);
+    }
   }
 
   // 可重写此方法实现具体页面渲染
