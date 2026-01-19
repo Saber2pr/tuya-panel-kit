@@ -16,18 +16,28 @@ export class IconSVG extends React.Component {
       currentAppState: true,
     };
   }
+
+  cancelChangeListener = null;
+
   componentDidMount() {
-    AppState.addEventListener('change', this._setAppState);
+    this.cancelChangeListener = AppState.addEventListener('change', this._setAppState);
   }
+
   componentWillUnmount() {
-    AppState.removeEventListener('change', this._setAppState);
+    if (Platform.OS === 'harmony' && this.cancelChangeListener) {
+      typeof this.cancelChangeListener.remove === 'function' && this.cancelChangeListener.remove();
+    } else {
+      AppState.removeEventListener('change', this._setAppState);
+    }
   }
+
   _setAppState = nextAppState => {
     if (Platform.OS === 'ios') return;
     this.setState({
       currentAppState: nextAppState,
     });
   };
+
   render() {
     const { props } = this;
     if (!props.d) return null;

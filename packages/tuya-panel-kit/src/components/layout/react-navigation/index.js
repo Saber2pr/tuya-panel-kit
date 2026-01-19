@@ -124,6 +124,8 @@ export default function createNavigator({ router, screenOptions }, navigationCon
       this._deviceRssiInfo = null;
     }
 
+    cancelChangeListener = null;
+
     componentDidMount() {
       if (Platform.OS === 'android') {
         BackHandler.addEventListener('hardwareBackPress', this._onBack);
@@ -133,7 +135,8 @@ export default function createNavigator({ router, screenOptions }, navigationCon
       TYNativeModules.receiverMqttData(23);
       TYNativeModules.sendMqttData(22);
       TYSdk.DeviceEventEmitter.addListener('receiveMqttData', this._handleMqttSignal);
-      this.state.isMqttNoticeActive &&
+      this.cancelChangeListener =
+        this.state.isMqttNoticeActive &&
         AppState.addEventListener('change', this._handleAppStateChange);
     }
 
@@ -145,7 +148,12 @@ export default function createNavigator({ router, screenOptions }, navigationCon
 
       this.timer && clearTimeout(this.timer);
       TYSdk.DeviceEventEmitter.removeListener('receiveMqttData', this._handleMqttSignal);
-      AppState.removeEventListener('change', this._handleAppStateChange);
+      if (Platform.OS === 'harmony' && this.cancelChangeListener) {
+        typeof this.cancelChangeListener.remove === 'function' &&
+          this.cancelChangeListener.remove();
+      } else {
+        AppState.removeEventListener('change', this._handleAppStateChange);
+      }
     }
 
     get hideSignalPop() {
